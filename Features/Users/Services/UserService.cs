@@ -13,6 +13,7 @@ namespace webcore_backend.Features.Users.Services;
 public class UserService(AppDbContext _dbContext, IHttpContextAccessor _httpContext) : IUserService
 {
     private readonly PasswordHasher<UserEntity> _hasher = new();
+    
     public async Task<Guid> RegisterUserAsync(RegisterUserRequestDto dto)
     {
         var user = new UserEntity

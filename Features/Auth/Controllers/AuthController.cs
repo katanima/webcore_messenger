@@ -8,6 +8,11 @@ namespace webcore_backend.Features.Auth.Controllers;
 [Route("api/[controller]")]
 public class AuthController(IAuthService _authService) : ControllerBase
 {
+    /// <summary>
+    /// Login user to system
+    /// </summary>
+    /// <param name="dto">Login data</param>
+    /// <returns>JWT token if succeed</returns>
     [HttpPost]
     public async Task<IActionResult> Login([FromBody] AuthUserRequestDto dto)
     {
