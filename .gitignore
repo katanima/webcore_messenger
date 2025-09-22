@@ -1,0 +1,7 @@
+.env
+db_password.txt
+appsettings.json
+appsettings.Development.json
+.idea
+obj
+bin
