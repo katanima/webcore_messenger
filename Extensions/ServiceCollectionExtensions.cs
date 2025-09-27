@@ -1,3 +1,4 @@
+using Microsoft.OpenApi.Models;
 using webcore_backend.Features.Auth.Services;
 using webcore_backend.Features.Friends.Services;
 using webcore_backend.Features.Users.Services;
@@ -11,6 +12,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRelationshipService, RelationshipService>();
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "webcore_backend", Version = "v1", Description = "" });
+        });
         
         return services;
     }
