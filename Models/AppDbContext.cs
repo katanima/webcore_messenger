@@ -13,4 +13,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GuildMemberEntity> GuildMember { get; set; }
     public DbSet<GuildInviteEntity> GuildInvite { get; set; }
     public DbSet<GuildRoleEntity> GuildRole { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserEntity>()
+            .ToTable("Users");
+        modelBuilder.Entity<RelationshipEntity>()
+            .ToTable(tb => tb.HasCheckConstraint("CK_UserAId_LT_UserBId", "\"UserAId\" > \"UserBId\""))
+            .HasKey(e => new { e.UserAId, e.UserBId });
+            
+        modelBuilder.Entity<GuildMemberEntity>()
+            .HasKey(e => new { e.GuildId, e.UserId });
+    }
 }
