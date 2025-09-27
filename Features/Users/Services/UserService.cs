@@ -41,6 +41,10 @@ public class UserService(AppDbContext _dbContext, IHttpContextAccessor _httpCont
         return GetUserResponseDto.From(user);
     }
 
+    public async Task<UserEntity?> GetUserFromTokenAsync()
+        => await _dbContext.User.FindAsync(
+            _httpContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        );
     
     public async Task<UserEntity?> GetUserByEmailAsync(string email)
         => await _dbContext.User.FirstOrDefaultAsync(u => u.Email == email);

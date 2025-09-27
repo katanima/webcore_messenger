@@ -19,6 +19,8 @@ public class UserEntity
     [Column(TypeName = "varchar(100)")]
     public string Username { get; set; }
     
+    //TODO: implement 
+    
     [Required]
     [EmailAddress]
     [MaxLength(255)]
@@ -33,4 +35,7 @@ public class UserEntity
     [MaxLength(20)]
     [Column(TypeName = "varchar(20)")]
     public string? PhoneNumber { get; set; }
+    
+    //TODO: implement join date
+    //TODO: implement guild list
 }

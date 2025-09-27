@@ -7,7 +7,8 @@ public interface IUserService
 {
     public Task<Guid> RegisterUserAsync(RegisterUserRequestDto dto);
     public Task<GetUserResponseDto> GetUserFromBearerTokenAsync();
-    
+
+    public Task<UserEntity?> GetUserFromTokenAsync();
     public Task<UserEntity?> GetUserByEmailAsync(string email);
     public Task<UserEntity?> GetUserByUsernameAsync(string username);
     public Task<bool> VerifyPasswordAsync(UserEntity user, string password);
