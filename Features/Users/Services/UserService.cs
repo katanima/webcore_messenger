@@ -6,11 +6,12 @@ using PhoneNumbers;
 using webcore_backend.Configurations;
 using webcore_backend.Features.Users.Dtos;
 using webcore_backend.Features.Users.Entities;
+using webcore_backend.Infrastructure.Http;
 using webcore_backend.Models;
 
 namespace webcore_backend.Features.Users.Services;
 
-public class UserService(AppDbContext _dbContext, IHttpContextAccessor _httpContext) : IUserService
+public class UserService(AppDbContext _dbContext) : IUserService
 {
     private readonly PasswordHasher<UserEntity> _hasher = new();
     
@@ -29,22 +30,16 @@ public class UserService(AppDbContext _dbContext, IHttpContextAccessor _httpCont
         return user.Id;
     }
 
-    public async Task<GetUserResponseDto> GetUserFromBearerTokenAsync()
+    public async Task<GetUserResponseDto> GetUserByIdAsync(Guid userId)
     {
-        var userIdClaim = _httpContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? throw new UnauthorizedAccessException("No valid token provided");
-        
-        var userId = Guid.Parse(userIdClaim);
         var user = await _dbContext.User.FindAsync(userId)
             ?? throw new UnauthorizedAccessException("User not found");
         
         return GetUserResponseDto.From(user);
     }
 
-    public async Task<UserEntity?> GetUserFromTokenAsync()
-        => await _dbContext.User.FindAsync(
-            _httpContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        );
+    public async Task<UserEntity?> GetCurrentUserAsync(Guid userId)
+        => await _dbContext.User.FindAsync(userId);
     
     public async Task<UserEntity?> GetUserByEmailAsync(string email)
         => await _dbContext.User.FirstOrDefaultAsync(u => u.Email == email);

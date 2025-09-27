@@ -9,8 +9,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
-        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IRelationshipService, RelationshipService>();
 
         services.AddSwaggerGen(c =>

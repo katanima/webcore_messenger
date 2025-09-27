@@ -5,7 +5,7 @@ using webcore_backend.Models;
 
 namespace webcore_backend.Features.Guilds.Services;
 
-public class GuildService(AppDbContext _dbContext, HttpContext _httpContext, IUserService _userService) : IGuildService
+public class GuildService(AppDbContext _dbContext, IUserService _userService) : IGuildService
 {
     public Task<Guid> CreateGuildAsync(CreateGuildRequestDto dto)
     {

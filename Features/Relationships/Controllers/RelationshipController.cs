@@ -1,21 +1,24 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using webcore_backend.Features.Friends.Services;
+using webcore_backend.Infrastructure.Http;
 
 namespace webcore_backend.Features.Relationships.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class RelationshipController(IRelationshipService _relationshipService) : ControllerBase
+public class RelationshipController(IRelationshipService _relationshipService, IUserContextAccessor _userContext) : ControllerBase
 {
+    private readonly Guid _currentUserId = _userContext.Id();
+    
     /// <summary>
     /// Get user friend list
     /// </summary>
     /// <returns>Friend list</returns>
     [HttpGet("friends")]
     public async Task<IActionResult> GetFriendListAsync()
-        => Ok(await _relationshipService.GetFriendListByBearerTokenAsync());
+        => Ok(await _relationshipService.GetFriendListAsync(_currentUserId));
 
     /// <summary>
     /// Get requests from other users to become friend
@@ -23,7 +26,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     /// <returns>Friend request list</returns>
     [HttpGet("requests")]
     public async Task<IActionResult> GetFriendRequestsAsync()
-        => Ok(await _relationshipService.GetFriendRequestListByBearerTokenAsync());
+        => Ok(await _relationshipService.GetFriendRequestListAsync(_currentUserId));
 
     /// <summary>
     /// Send friend request to somebody
@@ -33,7 +36,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpPost("request/{targetUserId:guid}")]
     public async Task<IActionResult> SendFriendRequestAsync(Guid targetUserId)
     {
-        await _relationshipService.SendFriendRequestAsync(targetUserId);
+        await _relationshipService.SendFriendRequestAsync(_currentUserId, targetUserId);
         return Ok();
     }
 
@@ -45,7 +48,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpPost("accept/{senderUserId:guid}")]
     public async Task<IActionResult> AcceptFriendRequestAsync(Guid senderUserId)
     {
-        await _relationshipService.AcceptFriendRequestAsync(senderUserId);
+        await _relationshipService.AcceptFriendRequestAsync(_currentUserId, senderUserId);
         return Ok();
     }
 
@@ -57,7 +60,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpPost("decline/{senderUserId:guid}")]
     public async Task<IActionResult> DeclineFriendRequestAsync(Guid senderUserId)
     {
-        await _relationshipService.DeclineFriendRequestAsync(senderUserId);
+        await _relationshipService.DeclineFriendRequestAsync(_currentUserId, senderUserId);
         return Ok();
     }
 
@@ -69,7 +72,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpDelete("remove/{targetUserId:guid}")]
     public async Task<IActionResult> RemoveFriendAsync(Guid targetUserId)
     {
-        await _relationshipService.RemoveFriendAsync(targetUserId);
+        await _relationshipService.RemoveFriendAsync(_currentUserId, targetUserId);
         return Ok();
     }
 
@@ -81,7 +84,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpPost("block/{targetUserId:guid}")]
     public async Task<IActionResult> BlockUserAsync(Guid targetUserId)
     {
-        await _relationshipService.BlockUserAsync(targetUserId);
+        await _relationshipService.BlockUserAsync(_currentUserId, targetUserId);
         return Ok();
     }
 
@@ -93,7 +96,7 @@ public class RelationshipController(IRelationshipService _relationshipService) :
     [HttpPost("unblock/{targetUserId:guid}")]
     public async Task<IActionResult> UnblockUserAsync(Guid targetUserId)
     {
-        await _relationshipService.UnblockUserAsync(targetUserId);
+        await _relationshipService.UnblockUserAsync(_currentUserId, targetUserId);
         return Ok();
     }
 }

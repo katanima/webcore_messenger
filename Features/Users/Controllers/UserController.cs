@@ -2,13 +2,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using webcore_backend.Features.Users.Dtos;
 using webcore_backend.Features.Users.Services;
+using webcore_backend.Infrastructure.Http;
 
 namespace webcore_backend.Features.Users.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController(IUserService _userService) : ControllerBase
+public class UserController(IUserService _userService, IUserContextAccessor _userContext) : ControllerBase
 {
+    private Guid UserId => _userContext.Id();
+    
     /// <summary>
     /// Register user
     /// </summary>
@@ -25,6 +28,6 @@ public class UserController(IUserService _userService) : ControllerBase
     /// <returns>User data</returns>
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetUserFromBearerTokenAsync() 
-        => Ok(await _userService.GetUserFromBearerTokenAsync());
+    public async Task<IActionResult> GetUserByIdAsync() 
+        => Ok(await _userService.GetUserByIdAsync(UserId));
 }

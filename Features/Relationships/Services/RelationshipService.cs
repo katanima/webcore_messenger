@@ -8,20 +8,17 @@ using webcore_backend.Shared.Users.Dtos;
 
 namespace webcore_backend.Features.Friends.Services;
 
-public class RelationshipService(AppDbContext _dbContext, IHttpContextAccessor _httpContext) : IRelationshipService
+public class RelationshipService(AppDbContext _dbContext) : IRelationshipService
 {
-    private Guid RequestingUserId => _httpContext.HttpContext?.User?.GetUserId()
-        ?? throw new UnauthorizedAccessException("User is not logged in");
-
-    private async Task<IEnumerable<UserGeneralInformationsDto>> GetUserInformationsByRelationshipStatusAsync(RelationshipStatus status)
+    private async Task<IEnumerable<UserGeneralInformationsDto>> GetUserInformationsByRelationshipStatusAsync(Guid currentUserId, RelationshipStatus status)
     {
         var relationships = await _dbContext.Relationship
             .Where(r => r.Status == status &&
-                        (r.SenderId == RequestingUserId || r.ReceiverId == RequestingUserId))
+                        (r.SenderId == currentUserId || r.ReceiverId == currentUserId))
             .ToListAsync();
 
         var otherUserIds = relationships
-            .Select(r => r.SenderId == RequestingUserId ? r.ReceiverId : r.SenderId)
+            .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
             .ToList();
 
         var users = await _dbContext.User
@@ -32,23 +29,23 @@ public class RelationshipService(AppDbContext _dbContext, IHttpContextAccessor _
         return users;
     }
 
-    public async Task<GetFriendListResponseDto> GetFriendListByBearerTokenAsync()
+    public async Task<GetFriendListResponseDto> GetFriendListAsync(Guid currentUserId)
     {
-        var friends = await GetUserInformationsByRelationshipStatusAsync(RelationshipStatus.Accepted);
+        var friends = await GetUserInformationsByRelationshipStatusAsync(currentUserId, RelationshipStatus.Accepted);
         return new GetFriendListResponseDto(friends);
     }
 
-    public async Task<GetFriendRequestListResponseDto> GetFriendRequestListByBearerTokenAsync()
+    public async Task<GetFriendRequestListResponseDto> GetFriendRequestListAsync(Guid currentUserId)
     {
-        var requests = await GetUserInformationsByRelationshipStatusAsync(RelationshipStatus.Pending);
+        var requests = await GetUserInformationsByRelationshipStatusAsync(currentUserId, RelationshipStatus.Pending);
         return new GetFriendRequestListResponseDto(requests);
     }
 
-    public async Task SendFriendRequestAsync(Guid targetUserId)
+    public async Task SendFriendRequestAsync(Guid currentUserId, Guid targetUserId)
     {
         var relationship = new RelationshipEntity
         {
-            SenderId = RequestingUserId,
+            SenderId = currentUserId,
             ReceiverId = targetUserId,
         };
         relationship.SetStatus(RelationshipStatus.Pending);
@@ -57,53 +54,53 @@ public class RelationshipService(AppDbContext _dbContext, IHttpContextAccessor _
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task AcceptFriendRequestAsync(Guid senderUserId)
+    public async Task AcceptFriendRequestAsync(Guid currentUserId, Guid senderUserId)
     {
         var request = await _dbContext.Relationship
             .SingleOrDefaultAsync(r => r.Status == RelationshipStatus.Pending &&
                                        r.SenderId == senderUserId &&
-                                       r.ReceiverId == RequestingUserId)
+                                       r.ReceiverId == currentUserId)
             ?? throw new InvalidOperationException("Friend request not found");
 
         request.SetStatus(RelationshipStatus.Accepted);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task DeclineFriendRequestAsync(Guid senderUserId)
+    public async Task DeclineFriendRequestAsync(Guid currentUserId, Guid senderUserId)
     {
         var request = await _dbContext.Relationship
             .SingleOrDefaultAsync(r => r.Status == RelationshipStatus.Pending &&
                                        r.SenderId == senderUserId &&
-                                       r.ReceiverId == RequestingUserId)
+                                       r.ReceiverId == currentUserId)
             ?? throw new InvalidOperationException("Friend request not found");
 
         _dbContext.Remove(request);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveFriendAsync(Guid targetUserId)
+    public async Task RemoveFriendAsync(Guid currentUserId, Guid targetUserId)
     {
         var friend = await _dbContext.Relationship
             .SingleOrDefaultAsync(r => r.Status == RelationshipStatus.Accepted &&
-                                       ((r.SenderId == RequestingUserId && r.ReceiverId == targetUserId) ||
-                                        (r.SenderId == targetUserId && r.ReceiverId == RequestingUserId)))
+                                       ((r.SenderId == currentUserId && r.ReceiverId == targetUserId) ||
+                                        (r.SenderId == targetUserId && r.ReceiverId == currentUserId)))
             ?? throw new InvalidOperationException("Friend not found");
 
         _dbContext.Remove(friend);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task BlockUserAsync(Guid targetUserId)
+    public async Task BlockUserAsync(Guid currentUserId, Guid targetUserId)
     {
         var relationship = await _dbContext.Relationship
-            .SingleOrDefaultAsync(r => (r.SenderId == RequestingUserId && r.ReceiverId == targetUserId) ||
-                                       (r.SenderId == targetUserId && r.ReceiverId == RequestingUserId));
+            .SingleOrDefaultAsync(r => (r.SenderId == currentUserId && r.ReceiverId == targetUserId) ||
+                                       (r.SenderId == targetUserId && r.ReceiverId == currentUserId));
 
         if (relationship == null)
         {
             relationship = new RelationshipEntity
             {
-                SenderId = RequestingUserId,
+                SenderId = currentUserId,
                 ReceiverId = targetUserId
             };
             _dbContext.Add(relationship);
@@ -113,11 +110,11 @@ public class RelationshipService(AppDbContext _dbContext, IHttpContextAccessor _
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task UnblockUserAsync(Guid targetUserId)
+    public async Task UnblockUserAsync(Guid currentUserId, Guid targetUserId)
     {
         var relationship = await _dbContext.Relationship
-            .SingleOrDefaultAsync(r => (r.SenderId == RequestingUserId && r.ReceiverId == targetUserId) ||
-                                       (r.SenderId == targetUserId && r.ReceiverId == RequestingUserId) &&
+            .SingleOrDefaultAsync(r => (r.SenderId == currentUserId && r.ReceiverId == targetUserId) ||
+                                       (r.SenderId == targetUserId && r.ReceiverId == currentUserId) &&
                                        r.Status == RelationshipStatus.Blocked) 
                            ?? throw new InvalidOperationException("Blocked user not found");
 

@@ -30,7 +30,6 @@ builder.Services.AddControllers(options => options.RespectBrowserAcceptHeader = 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions();
 builder.Services.AddAppServices();
@@ -47,19 +46,10 @@ builder.WebHost.ConfigureKestrel(options =>
 
 var app = builder.Build();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        c.RoutePrefix = string.Empty;
-    });
+    app.UseSwaggerUI();
 }
 else
 {
