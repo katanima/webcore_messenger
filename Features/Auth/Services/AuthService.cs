@@ -18,8 +18,8 @@ public class AuthService(IUserService _userService, IConfiguration _config, IOpt
     public async Task<string> AuthUserAsync(AuthUserRequestDto request)
     {
         var user = !string.IsNullOrWhiteSpace(request.Email)
-            ? await _userService.GetUserByEmailAsync(request.Email)
-            : await _userService.GetUserByUsernameAsync(request.Username!)
+            ? await _userService.FindUserByEmailAsync(request.Email)
+            : await _userService.FindUserByUsernameAsync(request.Username!)
               ?? throw new UnauthorizedAccessException("User not found");
 
         var isPasswordValid = await _userService.VerifyPasswordAsync(user, request.Password);

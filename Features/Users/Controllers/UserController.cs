@@ -29,5 +29,5 @@ public class UserController(IUserService _userService, IUserContextAccessor _use
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetUserByIdAsync() 
-        => Ok(await _userService.GetUserByIdAsync(UserId));
+        => Ok(await _userService.GetUserAsync(UserId));
 }
