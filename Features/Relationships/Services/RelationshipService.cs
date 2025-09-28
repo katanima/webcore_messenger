@@ -3,13 +3,14 @@ using webcore_backend.Extensions;
 using webcore_backend.Features.Friends.Dtos;
 using webcore_backend.Features.Friends.Entity;
 using webcore_backend.Features.Friends.Models;
+using webcore_backend.Features.Users.Entities;
 using webcore_backend.Features.Users.Services;
 using webcore_backend.Models;
 using webcore_backend.Shared.Users.Dtos;
 
 namespace webcore_backend.Features.Friends.Services;
 
-public class RelationshipService(AppDbContext _dbContext, IUserService _userService) : IRelationshipService
+public class RelationshipService(AppDbContext _dbContext) : IRelationshipService
 {
     private record SortedPair(Guid UserAId, Guid UserBId);
     private static SortedPair SortIds(Guid userAId, Guid userBId)
@@ -67,16 +68,23 @@ public class RelationshipService(AppDbContext _dbContext, IUserService _userServ
         return new GetFriendRequestListResponseDto(requests);
     }
 
+    private async Task<UserEntity> RequireUser(Guid userId)
+        => await _dbContext.User.FindAsync(userId)
+           ?? throw new InvalidOperationException($"User with ID {userId} not found");
+
     public async Task SendFriendRequestAsync(Guid currentUserId, Guid targetUserId)
     {
         var sortedIds = SortIds(currentUserId, targetUserId);
+        
+        var userA = await RequireUser(sortedIds.UserAId);
+        var userB = await RequireUser(sortedIds.UserBId);
         
         var relationship = new RelationshipEntity
         { 
             UserAId = sortedIds.UserAId,
             UserBId = sortedIds.UserBId,
-            UserA = await _userService.RequireUserByIdAsync(sortedIds.UserAId),
-            UserB = await _userService.RequireUserByIdAsync(sortedIds.UserBId)
+            UserA = userA,
+            UserB = userB,
         };
         relationship.SetStatus(RelationshipStatus.Pending);
 
@@ -115,13 +123,15 @@ public class RelationshipService(AppDbContext _dbContext, IUserService _userServ
         if (relationship == null)
         {
             var sortedIds = SortIds(currentUserId, targetUserId);
+            var userA = await RequireUser(sortedIds.UserAId);
+            var userB = await RequireUser(sortedIds.UserBId);
             
             relationship = new RelationshipEntity
             {
                 UserAId = sortedIds.UserAId,
                 UserBId = sortedIds.UserBId,
-                UserA = await _userService.RequireUserByIdAsync(sortedIds.UserAId),
-                UserB = await _userService.RequireUserByIdAsync(sortedIds.UserBId)
+                UserA = userA,
+                UserB = userB
             };
             _dbContext.Add(relationship);
         }

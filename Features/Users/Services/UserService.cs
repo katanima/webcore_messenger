@@ -27,18 +27,19 @@ public class UserService(AppDbContext _dbContext) : IUserService
 
     public async Task<GetUserResponseDto> GetUserAsync(Guid userId)
     {
-        return GetUserResponseDto.From(
-            await RequireUserByIdAsync(userId)
-        );
+        var currentUser = await _dbContext.User.FindAsync(userId)
+            ?? throw new UnauthorizedAccessException("User not found");
+        
+        return GetUserResponseDto.From(currentUser);
     }
 
-    public Task<bool> VerifyPasswordAsync(UserEntity user, string password)
+    /*public Task<bool> VerifyPasswordAsync(UserEntity user, string password)
     {
         var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
         return Task.FromResult(result == PasswordVerificationResult.Success);
-    }
+    }*/
 
-    public async Task<UserEntity> RequireUserByIdAsync(Guid userId)
+    /*public async Task<UserEntity> RequireUserByIdAsync(Guid userId)
         => await _dbContext.User.FindAsync(userId)
                ?? throw new UnauthorizedAccessException("User not found");
 
@@ -46,5 +47,5 @@ public class UserService(AppDbContext _dbContext) : IUserService
         => await _dbContext.User.FirstOrDefaultAsync(u => u.Email == email);
 
     public async Task<UserEntity?> FindUserByUsernameAsync(string username) 
-        => await _dbContext.User.FirstOrDefaultAsync(u => u.Username == username);
+        => await _dbContext.User.FirstOrDefaultAsync(u => u.Username == username);*/
 }
