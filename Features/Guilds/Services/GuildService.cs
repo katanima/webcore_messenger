@@ -1,29 +1,77 @@
-﻿using webcore_backend.Features.Guilds.Dtos;
+﻿using Microsoft.EntityFrameworkCore;
+using webcore_backend.Features.Guilds.Dtos;
 using webcore_backend.Features.Guilds.Entities;
+using webcore_backend.Features.Guilds.Exceptions;
+using webcore_backend.Features.Guilds.Models;
+using webcore_backend.Features.Invites.Services;
 using webcore_backend.Features.Users.Services;
 using webcore_backend.Models;
 
 namespace webcore_backend.Features.Guilds.Services;
 
-public class GuildService(AppDbContext _dbContext, IUserService _userService) : IGuildService
+public class GuildService(AppDbContext _dbContext, IGuildInviteService _inviteService, IGuildMemberService _memberService) : IGuildService
 {
-    public Task<Guid> CreateGuildAsync(CreateGuildRequestDto dto)
+    private async Task<GuildEntity> RequireGuildAsync(Guid guildId) 
+        => await _dbContext.Guild.FindAsync(guildId) 
+           ?? throw new KeyNotFoundException($"Guild with id {guildId} not found");
+
+    private async Task UserExistsOrThrowAsync(Guid currentUserId)
     {
-        throw new NotImplementedException();
+        if (!await _dbContext.User.AnyAsync(u => u.Id == currentUserId))
+            throw new UnauthorizedAccessException($"User with id {currentUserId} not found");
+    }
+    
+    public async Task<Guid> CreateGuildAsync(Guid currentUserId, CreateGuildRequestDto request)
+    {
+        await UserExistsOrThrowAsync(currentUserId);
+        
+        var guild = new GuildEntity
+        {
+            Name = request.Name,
+            Description = request.Description
+        };
+        
+        await _dbContext.Guild.AddAsync(guild);
+        await _dbContext.SaveChangesAsync();
+        
+        await _memberService.AddMemberToGuildAsync(currentUserId, guild.Id);
+
+        return guild.Id;
+    }
+    
+    public async Task EditGuildAsync(Guid currentUserId, EditGuildRequestDto request)
+    {
+        var currentGuildMember = await _dbContext.GuildMember
+                                     .Include(m => m.Roles)
+                                     .FirstOrDefaultAsync(m => m.UserId == currentUserId && m.GuildId == request.GuildId) 
+                                 ?? throw new UnauthorizedAccessException($"User with id {request.GuildId} is not member of the guild or guild with id {request.GuildId} doesn't exist");
+
+        var hasPermissions = _memberService.HasAnyPermission(
+            currentGuildMember,
+            RolePermissions.Administrator,
+            RolePermissions.EditServer);
+        if (!hasPermissions)
+            throw new MissingPermission($"Member with id {currentGuildMember.UserId} has no permissions");
+        
+        var guild = await RequireGuildAsync(request.GuildId);
+        
+        guild.Name = request.Name ?? guild.Name;
+        guild.Description = request.Description ?? guild.Description;
+        
+        await _dbContext.SaveChangesAsync();
     }
 
-    public Task EditGuildAsync(EditGuildRequestDto dto)
+    public async Task JoinGuildAsync(Guid currentUserId, Guid inviteId)
     {
-        throw new NotImplementedException();
-    }
+        var invite = await _inviteService.RequireValidInviteAsync(inviteId);
 
-    public Task JoinGuildByInviteAsync(Guid inviteId)
-    {
-        throw new NotImplementedException();
-    }
+        await _memberService.AddMemberToGuildAsync(currentUserId, invite.Guild.Id);
 
-    public Task LeaveGuildAsync(Guid guildId)
+        await _inviteService.UseInviteAsync(invite);
+    }
+    
+    public async Task LeaveGuildAsync(Guid currentUserId, Guid guildId)
     {
-        throw new NotImplementedException();
+        await _memberService.RemoveMemberFromGuildAsync(currentUserId, guildId);
     }
 }

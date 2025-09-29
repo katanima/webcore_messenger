@@ -11,5 +11,5 @@ public class GuildRoleEntity
     public Guid GuildId { get; set; }
     
     [Required]
-    public List<RolePermissions> Permissions { get; set; }
+    public RolePermissions Permissions { get; set; }
 }

@@ -24,8 +24,7 @@ public class RelationshipService(AppDbContext _dbContext) : IRelationshipService
         var sortedIds = SortIds(idA, idB);
         
         return await _dbContext.Relationship
-                   .SingleOrDefaultAsync(r => r.Status == RelationshipStatus.Pending && 
-                                              r.UserAId == sortedIds.UserAId && r.UserBId == sortedIds.UserBId) 
+                   .SingleOrDefaultAsync(r => r.Status == status && r.UserAId == sortedIds.UserAId && r.UserBId == sortedIds.UserBId) 
                ?? throw new InvalidOperationException("Friend request not found");
     }
 
@@ -75,11 +74,23 @@ public class RelationshipService(AppDbContext _dbContext) : IRelationshipService
     public async Task SendFriendRequestAsync(Guid currentUserId, Guid targetUserId)
     {
         var sortedIds = SortIds(currentUserId, targetUserId);
+
+        var relationship = await _dbContext.Relationship.FindAsync(sortedIds.UserAId, sortedIds.UserBId);
+        if (relationship != null)
+        {
+            throw relationship.Status switch
+            {
+                RelationshipStatus.Accepted => new InvalidOperationException("Target user is already a friend"),
+                RelationshipStatus.Pending => new InvalidOperationException("Friend request already exists"),
+                RelationshipStatus.Blocked => new InvalidOperationException("Target user is blocked"),
+                _ => new InvalidOperationException("Relationship exists with unknown status")
+            };
+        }
         
         var userA = await RequireUser(sortedIds.UserAId);
         var userB = await RequireUser(sortedIds.UserBId);
         
-        var relationship = new RelationshipEntity
+        relationship = new RelationshipEntity
         { 
             UserAId = sortedIds.UserAId,
             UserBId = sortedIds.UserBId,

@@ -1,21 +1,20 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace webcore_backend.Features.Guilds.Entities;
 
 public class GuildInviteEntity
 {
     public Guid Id { get; set; }
-    
-    [Required]
     public Guid GuildId { get; set; }
     
     [Required]
-    public Guid ChannelId { get; set; }
+    [ForeignKey(nameof(GuildId))]
+    public GuildEntity Guild { get; set; }
     
-    [Required]
-    public DateTime expirationDate { get; set; }
+    public DateTime ExpirationDate { get; set; } = DateTime.MaxValue;
+    
+    public int RemainingUses { get; set; } = int.MaxValue;
     
     public int InviteCount { get; set; }
-    
-    public int MaxUseAmount { get; set; }
 }
