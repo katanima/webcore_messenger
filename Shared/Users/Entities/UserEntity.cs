@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using webcore_backend.Features.Users.Dtos;
 
-namespace webcore_backend.Features.Users.Entities;
+namespace webcore_backend.Shared.Users.Entities;
 
 [Index(nameof(Username), IsUnique = true)]
 [Index(nameof(Email), IsUnique = true)]
@@ -18,8 +17,6 @@ public class UserEntity
     [MaxLength(100)]
     [Column(TypeName = "varchar(100)")]
     public string Username { get; set; }
-    
-    //TODO: implement 
     
     [Required]
     [EmailAddress]

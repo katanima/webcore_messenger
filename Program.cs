@@ -1,19 +1,15 @@
-using System.Text;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using webcore_backend.Configurations;
 using webcore_backend.Models;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using webcore_backend.Extensions;
 
 Env.Load();
 
+#region Database configuration load
 string[] dbPasswordPossiblePaths = ["/run/secrets/db_password", "./db_password.txt"];
 var dbPasswordPath = dbPasswordPossiblePaths.FirstOrDefault(File.Exists);
-var dbPassword = dbPasswordPath != null ? File.ReadAllText(dbPasswordPath).Trim() : null;
-
+var dbPassword = dbPasswordPath != null ? File.ReadAllText(dbPasswordPath).Trim() : "";
 var databaseSettings = new DbSettings(
     Host: Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "postgres",
     Port: Environment.GetEnvironmentVariable("POSTGRES_PORT"),
@@ -21,21 +17,26 @@ var databaseSettings = new DbSettings(
     Username: Environment.GetEnvironmentVariable("POSTGRES_USER"),
     Password: dbPassword
 );
+#endregion
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers(options => options.RespectBrowserAcceptHeader = true)
-    .AddXmlSerializerFormatters();
-
+builder.Services.AddControllers();
+#region Swagger configuration
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddControllersWithViews();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("User", new() { Title = "User", Description = "", Version = "V1" });
+    options.SwaggerDoc("Guild", new() { Title = "Guild", Description = "", Version = "V1" });
+});
+#endregion
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions();
 builder.Services.AddAppServices();
+#region Database configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(databaseSettings.ToConnectionString())
 );
+#endregion
 builder.Services.AddCustomAuthentication(builder.Configuration);
 builder.Services.AddAuthorization();
 builder.WebHost.ConfigureKestrel(options =>
@@ -45,17 +46,20 @@ builder.WebHost.ConfigureKestrel(options =>
 
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
+#region Swagger middleware
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+    options.SwaggerEndpoint("/swagger/User/swagger.json", "User");
+    options.SwaggerEndpoint("/swagger/Guild/swagger.json", "Guild");
+    options.RoutePrefix = string.Empty;
+});
+#endregion
+if (app.Environment.IsProduction())
 {
     app.UseHsts();
 }
-
+#region Database middleware
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -76,15 +80,12 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Make sure PostgreSQL is running on localhost:5432 or run 'docker-compose up -d postgres'");
     }
 }
-
+#endregion
 app.UseHttpsRedirection();
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
