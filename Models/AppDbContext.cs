@@ -1,14 +1,17 @@
 using Microsoft.EntityFrameworkCore;
-using webcore_backend.Features.Friends.Entity;
-using webcore_backend.Features.Guilds.Entities;
-using webcore_backend.Features.Users.Entities;
+using webcore_backend.Features.Guilds.Core.Entities;
+using webcore_backend.Features.Guilds.Invites.Entities;
+using webcore_backend.Features.Guilds.Members.Entities;
+using webcore_backend.Features.Guilds.Roles.Entities;
+using webcore_backend.Features.Users.Relationships.Entities;
+using webcore_backend.Shared.Users.Entities;
 
 namespace webcore_backend.Models;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<UserEntity> User { get; set; }
-    public DbSet<RelationshipEntity> Relationship { get; set; }
+    public DbSet<UserRelationshipEntity> Relationship { get; set; }
     public DbSet<GuildEntity> Guild { get; set; }
     public DbSet<GuildMemberEntity> GuildMember { get; set; }
     public DbSet<GuildInviteEntity> GuildInvite { get; set; }
@@ -18,7 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<UserEntity>()
             .ToTable("Users");
-        modelBuilder.Entity<RelationshipEntity>()
+        modelBuilder.Entity<UserRelationshipEntity>()
             .ToTable(tb => tb.HasCheckConstraint("CK_UserAId_LT_UserBId", "\"UserAId\" > \"UserBId\""))
             .HasKey(e => new { e.UserAId, e.UserBId });
             

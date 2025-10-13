@@ -8,9 +8,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using webcore_backend.Configurations;
 using webcore_backend.Features.Auth.Dtos;
-using webcore_backend.Features.Users.Entities;
-using webcore_backend.Features.Users.Services;
 using webcore_backend.Models;
+using webcore_backend.Shared.Users.Entities;
 
 namespace webcore_backend.Features.Auth.Services;
 
