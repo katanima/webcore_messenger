@@ -1,6 +1,16 @@
 # Webcore Messenger
 
-This is the backend service for Webcore, a communicator app.
+Webcore Messenger is a working name for a prototype communication app that allows users to exchange messages and files bidirectionally, join servers, and chat in real time.
+The project focuses on two main goals that will distinguish it from other messengers:
+
+### Highly customizable frontend
+
+Users should have the ability to modify every visible element — similar to how skins work in Winamp — as well as customize the layout of their profiles and servers. They will also be able to create and share their own themes publicly.
+
+### Reducing maintenance and resource overhead
+
+Over time, as the user base grows, disk space and bandwidth usage can become a burden. The app aims to encourage peer-to-peer file transfers and temporary uploads for large files that are automatically removed after a set period.
+Inactive servers will be deleted after prior notification to their owners, who will have the option to archive all their files locally.
 
 ## Installation
 
